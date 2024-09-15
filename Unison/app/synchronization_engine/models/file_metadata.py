@@ -48,7 +48,7 @@ class FileMetadataBase(BaseModel):
     incognito: bool = Field(..., description="Whether the download is in incognito mode")
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 class FileMetadata(FileMetadataBase):
     pass

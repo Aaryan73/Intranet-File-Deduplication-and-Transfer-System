@@ -1,11 +1,31 @@
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { useTab } from "../hooks/TabContext";
 import { CiLogout } from "react-icons/ci";
+import { useEffect, useState } from "react";
 
 const Profile = () => {
   const { switchTab } = useTab();
+
+  const [userData, setUserData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    passwordConfirmation: ''
+  });
+
+  useEffect(() => {
+    const data = localStorage.getItem('userData');
+    if (data) {
+      setUserData(JSON.parse(data));
+    }
+    else {
+      switchTab('register');
+    }
+  }, []);
+
   const handleDeleteAccount = () => {
     console.log('Account deleted');
+    localStorage.removeItem('userData');
   };
 
   const handleChangePassword = () => {
@@ -14,19 +34,23 @@ const Profile = () => {
 
   const handleLogin = () => {
     switchTab('login');
-    console.log('Change password');
+    console.log('Logged out');
   };
 
   return (
-    <div className="flex relative justify-center items-center min-h-screen ">
-      <button onClick={() => { switchTab('popup') }} className="px-6  fixed top-4 left-4 flex items-center justify-center gap-2  py-2.5 leading-5 text-white transition-colors duration-300 transform bg-gray-700 rounded-md hover:bg-gray-600 focus:outline-none focus:bg-gray-600"><IoIosArrowRoundBack /> back</button>
-      <div className=" p-6 rounded-lg  max-w-sm w-full text-center">
+    <div className="flex relative justify-center items-center min-h-screen">
+      <button
+        onClick={() => { switchTab('popup') }}
+        className="px-6 fixed top-4 left-4 flex items-center justify-center gap-2 py-2.5 leading-5 text-white transition-colors duration-300 transform bg-gray-700 rounded-md hover:bg-gray-600 focus:outline-none focus:bg-gray-600">
+        <IoIosArrowRoundBack /> back
+      </button>
+      <div className="p-6 rounded-lg max-w-sm w-full text-center">
         <img
           src="https://static.vecteezy.com/system/resources/thumbnails/002/002/403/small/man-with-beard-avatar-character-isolated-icon-free-vector.jpg"
           alt="Profile"
           className="w-24 h-24 rounded-full mx-auto mb-4"
         />
-        <h1 className="text-2xl font-semibold mb-4">Username123</h1>
+        <h1 className="text-2xl font-semibold mb-4">{userData.username || 'Username'}</h1>
 
         <button
           onClick={handleChangePassword}
@@ -36,11 +60,15 @@ const Profile = () => {
         </button>
         <button
           onClick={handleDeleteAccount}
-          className="w-full bg-red-500 text-white py-2 mb-2 px-4 rounded-lg  hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+          className="w-full bg-red-500 text-white py-2 mb-2 px-4 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
         >
           Delete Account
         </button>
-        <button onClick={handleLogin} className="px-4 flex w-full items-center justify-center gap-2  py-2 leading-5 text-white transition-colors duration-300 transform bg-gray-700 rounded-md hover:bg-gray-600 focus:outline-none focus:bg-gray-600"><CiLogout /> logout</button>
+        <button
+          onClick={handleLogin}
+          className="px-4 flex w-full items-center justify-center gap-2 py-2 leading-5 text-white transition-colors duration-300 transform bg-gray-700 rounded-md hover:bg-gray-600 focus:outline-none focus:bg-gray-600">
+          <CiLogout /> logout
+        </button>
       </div>
     </div>
   );

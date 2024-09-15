@@ -1,7 +1,7 @@
-from app.repositories.file_metadata import FileMetadataRepository
-from app.repositories.server_status import ServerStatusRepository
-from app.services.file_metadata import FileMetadataService
-from app.services.server_status import ServerStatusService
+from app.synchronization_engine.repositories.file_metadata import FileMetadataRepository
+from app.synchronization_engine.repositories.server_status import ServerStatusRepository
+from app.synchronization_engine.services.file_metadata import FileMetadataService
+from app.synchronization_engine.services.server_status import ServerStatusService
 
 def get_file_metadata_service():
     file_metadata_repo = FileMetadataRepository()

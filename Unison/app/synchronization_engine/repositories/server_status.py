@@ -1,14 +1,14 @@
-from .base import BaseRepository
-from app.models.server_status import ServerStatusCreate, ServerStatusInDB
+from app.core.mongodb import server_status_collection
+from app.synchronization_engine.models.server_status import ServerStatusCreate, ServerStatusInDB
 from typing import List, Optional
 
-class ServerStatusRepository(BaseRepository):
+class ServerStatusRepository():
     def __init__(self):
         super().__init__()
-        self.collection = self.db.server_status
+        self.collection = server_status_collection
 
     async def update_status(self, server_status: ServerStatusCreate):
-        server_status_dict = server_status.dict()
+        server_status_dict = server_status.model_dump()
         await self.collection.update_one(
             {"user_id": server_status.user_id},
             {"$set": server_status_dict},

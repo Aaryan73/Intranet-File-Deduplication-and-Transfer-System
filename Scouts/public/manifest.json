@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Scouts",
+  "version": "1.0",
+  "action": {
+    "default_popup":"index.html"
+  },
+  "icons": {
+    "16": "icon.png"
+  },
+  "permissions": 
+    ["scripting", "downloads", "notifications", "storage"],
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

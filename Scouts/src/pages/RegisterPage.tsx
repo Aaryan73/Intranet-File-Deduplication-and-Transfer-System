@@ -1,27 +1,35 @@
 import React, { useState, FormEvent } from 'react';
+import axios from 'axios';
 import { useTab } from "../hooks/TabContext";
 import toast from "react-hot-toast";
 
 const RegisterPage: React.FC = () => {
   const { switchTab } = useTab();
 
-  const [username, setUsername] = useState<string>('');
   const [email, setEmail] = useState<string>('');
+  const [institutionId, setInstitutionId] = useState<string>('');
+  const [firstName, setFirstName] = useState<string>('');
+  const [lastName, setLastName] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [passwordConfirmation, setPasswordConfirmation] = useState<string>('');
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    localStorage.setItem('userData', JSON.stringify({
-      username,
-      email,
-      password,
-      passwordConfirmation,
-    }));
+    try {
+      await axios.post('http://52.172.0.204:8080/api/user/register', {
+        email,
+        institution_id: institutionId,
+        first_name: firstName,
+        last_name: lastName,
+        password,
+      });
 
-    switchTab('popup');
-    toast.success("Register Success");
+      switchTab('login');
+      toast.success("Register Success");
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast.error("Registration failed");
+    }
   }
 
   const goToLogin = () => {
@@ -35,23 +43,45 @@ const RegisterPage: React.FC = () => {
       <form onSubmit={onSubmit}>
         <div className="grid w-full grid-cols-1 gap-6 mt-4">
           <div>
-            <label className="text-gray-200" htmlFor="username">Username</label>
+            <label className="text-gray-200" htmlFor="email">Email Address</label>
             <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="block w-full px-4 py-2 mt-2 text-gray-300 bg-gray-700 border border-gray-600 rounded-md focus:border-blue-300 focus:ring-blue-300 focus:ring-opacity-40 dark:focus:border-blue-300 focus:outline-none focus:ring"
             />
           </div>
 
           <div>
-            <label className="text-gray-200" htmlFor="emailAddress">Email Address</label>
+            <label className="text-gray-200" htmlFor="institutionId">Institution ID</label>
             <input
-              id="emailAddress"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="institutionId"
+              type="text"
+              value={institutionId}
+              onChange={(e) => setInstitutionId(e.target.value)}
+              className="block w-full px-4 py-2 mt-2 text-gray-300 bg-gray-700 border border-gray-600 rounded-md focus:border-blue-300 focus:ring-blue-300 focus:ring-opacity-40 dark:focus:border-blue-300 focus:outline-none focus:ring"
+            />
+          </div>
+
+          <div>
+            <label className="text-gray-200" htmlFor="firstName">First Name</label>
+            <input
+              id="firstName"
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="block w-full px-4 py-2 mt-2 text-gray-300 bg-gray-700 border border-gray-600 rounded-md focus:border-blue-300 focus:ring-blue-300 focus:ring-opacity-40 dark:focus:border-blue-300 focus:outline-none focus:ring"
+            />
+          </div>
+
+          <div>
+            <label className="text-gray-200" htmlFor="lastName">Last Name</label>
+            <input
+              id="lastName"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
               className="block w-full px-4 py-2 mt-2 text-gray-300 bg-gray-700 border border-gray-600 rounded-md focus:border-blue-300 focus:ring-blue-300 focus:ring-opacity-40 dark:focus:border-blue-300 focus:outline-none focus:ring"
             />
           </div>
@@ -63,17 +93,6 @@ const RegisterPage: React.FC = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="block w-full px-4 py-2 mt-2 text-gray-300 bg-gray-700 border border-gray-600 rounded-md focus:border-blue-300 focus:ring-blue-300 focus:ring-opacity-40 dark:focus:border-blue-300 focus:outline-none focus:ring"
-            />
-          </div>
-
-          <div>
-            <label className="text-gray-200" htmlFor="passwordConfirmation">Password Confirmation</label>
-            <input
-              id="passwordConfirmation"
-              type="password"
-              value={passwordConfirmation}
-              onChange={(e) => setPasswordConfirmation(e.target.value)}
               className="block w-full px-4 py-2 mt-2 text-gray-300 bg-gray-700 border border-gray-600 rounded-md focus:border-blue-300 focus:ring-blue-300 focus:ring-opacity-40 dark:focus:border-blue-300 focus:outline-none focus:ring"
             />
           </div>

@@ -18,13 +18,11 @@ export const TabProvider: React.FC<TabProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check localStorage for userData
-    const userData = localStorage.getItem('userData');
-
-    // If userData exists, switch to the 'popup' tab
-    if (userData) {
+    const accessToken = localStorage.getItem('accessToken');
+    if (accessToken) {
       switchTab('popup');
     }
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
   return (
     <TabContext.Provider value={{ activeTab, switchTab }}>

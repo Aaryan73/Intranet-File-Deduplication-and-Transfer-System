@@ -3,79 +3,118 @@ import { format } from 'date-fns'
 import Link from 'next/link'
 import { getOrderStatus } from '../lib/helpers'
 
-interface Order {
-  id: string
-  product_id: string
-  customer_id: string
-  customer_name: string
-  order_date: string
-  order_total: string
-  current_order_status: string
-  shipment_address: string
+interface FileTransferStatus {
+  bytesReceived: number;
+  endTime: string;
+  fileSize: number;
+  filename: string;
+  id: number;
+  incognito: boolean;
+  mime: string;
+  paused: boolean;
+  startTime: string;
+  state: string;
+  totalBytes: number;
+  sender: string;
+  receiver: string;
 }
 
-const recentOrderData: Order[] = [
+
+
+const recentTransferData: FileTransferStatus[] = [
   {
-    id: '1',
-    product_id: '4324',
-    customer_id: '23143',
-    customer_name: 'Shirley A. Lape',
-    order_date: '2022-05-17T03:24:00',
-    order_total: '$435.50',
-    current_order_status: 'PLACED',
-    shipment_address: 'Cottage Grove, OR 97424'
+    bytesReceived: 40554,
+    endTime: "2024-09-15T07:38:27.975Z",
+    fileSize: 40554,
+    filename: "colorful-design-with-spiral-design_188544-9588.avif",
+    id: 1,
+    incognito: false,
+    mime: "image/avif",
+    paused: false,
+    startTime: "2024-09-15T07:38:25.967Z",
+    state: "complete",
+    totalBytes: 40554,
+    sender: "ojf",
+    receiver: "asfs"
   },
   {
-    id: '7',
-    product_id: '7453',
-    customer_id: '96453',
-    customer_name: 'Ryan Carroll',
-    order_date: '2022-05-14T05:24:00',
-    order_total: '$96.35',
-    current_order_status: 'CONFIRMED',
-    shipment_address: 'Los Angeles, CA 90017'
+    bytesReceived: 102400,
+    endTime: "2024-09-15T08:15:12.456Z",
+    fileSize: 102400,
+    filename: "sunset-over-mountains_123456-7890.jpg",
+    id: 2,
+    incognito: true,
+    mime: "image/jpeg",
+    paused: false,
+    startTime: "2024-09-15T08:14:30.123Z",
+    state: "complete",
+    totalBytes: 102400,
+    sender: "xyz",
+    receiver: "abc"
   },
   {
-    id: '2',
-    product_id: '5434',
-    customer_id: '65345',
-    customer_name: 'Mason Nash',
-    order_date: '2022-05-17T07:14:00',
-    order_total: '$836.44',
-    current_order_status: 'SHIPPED',
-    shipment_address: 'Westminster, CA 92683'
+    bytesReceived: 51200,
+    endTime: "2024-09-15T09:25:35.678Z",
+    fileSize: 51200,
+    filename: "document-with-notes_876543-2101.pdf",
+    id: 3,
+    incognito: false,
+    mime: "application/pdf",
+    paused: true,
+    startTime: "2024-09-15T09:20:10.987Z",
+    state: "paused",
+    totalBytes: 51200,
+    sender: "user1",
+    receiver: "user2"
   },
   {
-    id: '3',
-    product_id: '9854',
-    customer_id: '87832',
-    customer_name: 'Luke Parkin',
-    order_date: '2022-05-16T12:40:00',
-    order_total: '$334.50',
-    current_order_status: 'SHIPPED',
-    shipment_address: 'San Mateo, CA 94403'
+    bytesReceived: 20480,
+    endTime: "2024-09-15T10:35:20.345Z",
+    fileSize: 20480,
+    filename: "simple-icon_543210-9876.png",
+    id: 4,
+    incognito: false,
+    mime: "image/png",
+    paused: false,
+    startTime: "2024-09-15T10:30:15.789Z",
+    state: "complete",
+    totalBytes: 20480,
+    sender: "jkl",
+    receiver: "mno"
   },
   {
-    id: '4',
-    product_id: '8763',
-    customer_id: '09832',
-    customer_name: 'Anthony Fry',
-    order_date: '2022-05-14T03:24:00',
-    order_total: '$876.00',
-    current_order_status: 'OUT_FOR_DELIVERY',
-    shipment_address: 'San Mateo, CA 94403'
+    bytesReceived: 81920,
+    endTime: "2024-09-15T11:45:50.123Z",
+    fileSize: 81920,
+    filename: "high-resolution-background_567890-1234.bmp",
+    id: 5,
+    incognito: true,
+    mime: "image/bmp",
+    paused: false,
+    startTime: "2024-09-15T11:40:00.456Z",
+    state: "complete",
+    totalBytes: 81920,
+    sender: "pqr",
+    receiver: "stu"
   },
   {
-    id: '5',
-    product_id: '5627',
-    customer_id: '97632',
-    customer_name: 'Ryan Carroll',
-    order_date: '2022-05-14T05:24:00',
-    order_total: '$96.35',
-    current_order_status: 'DELIVERED',
-    shipment_address: 'Los Angeles, CA 90017'
-  }
-]
+    bytesReceived: 4096,
+    endTime: "2024-09-15T12:10:05.678Z",
+    fileSize: 4096,
+    filename: "tiny-file_234567-8901.txt",
+    id: 6,
+    incognito: false,
+    mime: "text/plain",
+    paused: false,
+    startTime: "2024-09-15T12:05:00.123Z",
+    state: "complete",
+    totalBytes: 4096,
+    sender: "abc",
+    receiver: "xyz"
+  },
+
+
+];
 
 const RecentOrders: React.FC = () => {
   return (
@@ -86,40 +125,40 @@ const RecentOrders: React.FC = () => {
           <thead className="bg-gray-800">
             <tr>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">ID</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Product ID</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Customer Name</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Order Date</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Order Total</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Shipping Address</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Order Status</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Sender</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">File Name</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Start Time</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">File Size</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Receiver </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
             </tr>
           </thead>
           <tbody className="bg-gray-800 divide-y text-gray-700 text-sm divide-gray-200">
-            {recentOrderData.map((order) => (
-              <tr key={order.id} className="">
+            {recentTransferData.map((file) => (
+              <tr key={file.id} className="">
                 <td className="px-3 py-4 whitespace-nowrap">
-                  <Link href={`/order/${order.id}`} className="text-gray-300 hover:text-gray-200">
-                    #{order.id}
+                  <Link href={`/`} className="text-gray-300 hover:text-gray-200">
+                    #{file.id}
                   </Link>
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap">
-                  <Link href={`/product/${order.product_id}`} className="text-gray-300 hover:text-gray-200">
-                    #{order.product_id}
-                  </Link>
+                  <p className="text-gray-300 hover:text-gray-200">
+                    #{file.sender}
+                  </p>
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap">
-                  <Link href={`/customer/${order.customer_id}`} className="text-gray-300 hover:text-gray-200">
-                    {order.customer_name}
-                  </Link>
+                  <p className="text-gray-300 hover:text-gray-200">
+                    {file.filename.slice(0, 40)}
+                  </p>
                 </td>
                 <td className="px-3 py-4 text-gray-300 whitespace-nowrap">
-                  {format(new Date(order.order_date), 'dd MMM yyyy')}
+                  {format(new Date(file.startTime), 'dd MMM yyyy')}
                 </td>
                 <td className="px-3 py-4 text-gray-300 whitespace-nowrap">
-                  {order.order_total}
+                  {file.bytesReceived}
                 </td>
                 <td className="px-3 py-4 text-gray-300 whitespace-nowrap">
-                  {order.shipment_address}
+                  {file.receiver}
                 </td>
                 <td className="px-3 py-4 text-gray-300 whitespace-nowrap">
                   {getOrderStatus("DELIVERED")}
@@ -129,7 +168,7 @@ const RecentOrders: React.FC = () => {
           </tbody>
         </table>
       </div>
-    </div>
+    </div >
   )
 }
 

@@ -1,7 +1,30 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useTab } from '../hooks/TabContext';
+import axios from 'axios';
 
 const ToggleSwitch = () => {
-  const [isChecked, setIsChecked] = useState(false);
+  const [isChecked, setIsChecked] = useState(true);
+  const { switchTab } = useTab();
+  useEffect(() => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (accessToken) {
+      axios.get('http://52.172.0.204:8080/api/user/me', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      })
+        .then(response => {
+          setIsChecked(response.data.is_active);
+        })
+        .catch(error => {
+          console.error("Error fetching user data:", error);
+          localStorage.removeItem('accessToken');
+          switchTab('login');
+        });
+    } else {
+      switchTab('register');
+    }
+  }, [switchTab]);
 
   const handleToggle = () => {
     setIsChecked(!isChecked);
@@ -23,7 +46,7 @@ const ToggleSwitch = () => {
         />
       </div>
       <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
-        {isChecked ? 'Deactive' : 'Active'}
+        {isChecked ? 'Active' : 'Deactive'}
       </span>
     </label>
   );

@@ -55,7 +55,7 @@ class UserCreate(UserBase):
 
 class UserInDBBase(UserBase):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
-    is_active: bool = False
+    is_active: bool = True   # TODO: For now default is True, need to change this after otp is working
     is_superuser: bool = False
     created_at: datetime = Field(default_factory=datetime_now)
     updated_at: datetime = Field(default_factory=datetime_now)
@@ -70,7 +70,7 @@ class UserInDB(UserBase):
     id: PyObjectId = Field(alias="_id")
     hashed_password: str
     otp_secret: str
-    is_active: bool = False
+    is_active: bool = True   # TODO: For now default is True, need to change this after otp is working
     is_superuser: bool = False
     created_at: datetime
     updated_at: datetime

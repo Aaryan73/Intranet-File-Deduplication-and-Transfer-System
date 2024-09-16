@@ -22,7 +22,8 @@ const Profile = () => {
         })
         .catch(error => {
           console.error("Error fetching user data:", error);
-          toast.error("Failed to fetch user data");
+          localStorage.removeItem('accessToken');
+          switchTab('login');
         });
     } else {
       switchTab('register');

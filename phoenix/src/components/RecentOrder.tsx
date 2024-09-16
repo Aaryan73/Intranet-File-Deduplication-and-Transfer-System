@@ -119,7 +119,7 @@ const recentTransferData: FileTransferStatus[] = [
 const RecentOrders: React.FC = () => {
   return (
     <div className="bg-gray-800 p-4 rounded-md border border-gray-700 shadow-sm">
-      <strong className="text-gray-200 text-lg font-semibold">Recent Orders</strong>
+      <strong className="text-gray-200 text-lg font-semibold">Recent Transfers</strong>
       <div className="overflow-x-auto mt-4">
         <table className="min-w-full divide-y border divide-gray-200">
           <thead className="bg-gray-800">

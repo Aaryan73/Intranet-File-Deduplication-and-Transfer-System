@@ -43,7 +43,7 @@ const LoginPage = () => {
 
   return (
     <section className="max-w-4xl w-full p-6 mx-auto bg-gray-800 rounded-md shadow-md dark:bg-gray-800">
-      <h2 className="text-lg font-semibold text-white capitalize">Account settings</h2>
+      <h2 className="text-lg font-semibold text-white capitalize">Log In</h2>
 
       <form onSubmit={handleSubmit}>
         <div className="grid w-full grid-cols-1 gap-6 mt-4">

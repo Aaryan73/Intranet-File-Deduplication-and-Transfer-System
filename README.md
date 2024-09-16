@@ -1,5 +1,3 @@
-# Data download Duplication Alert System (DDAS)
-
 ## System Architecture
 
 ### **Browser Extension (JavaScript)**

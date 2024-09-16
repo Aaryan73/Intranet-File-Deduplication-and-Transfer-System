@@ -1,7 +1,7 @@
-from app.repositories.file_metadata import FileMetadataRepository
-from app.repositories.server_status import ServerStatusRepository
-from app.models.file_metadata import FileMetadataCreate, FileMetadataInDB
-from app.schemas.file_metadata import FileMetadataMatchResponse, FileMetadataCreateResponse
+from app.synchronization_engine.repositories.file_metadata import FileMetadataRepository
+from app.synchronization_engine.repositories.server_status import ServerStatusRepository
+from app.synchronization_engine.models.file_metadata import FileMetadataCreate
+from app.synchronization_engine.schemas.file_metadata import FileMetadataMatchResponse, FileMetadataCreateResponse, FileMetadataResponse
 from fastapi import HTTPException, status
 
 class FileMetadataService:
@@ -33,12 +33,19 @@ class FileMetadataService:
 
     async def get_file_metadata(self, file_size: int, partial_checksum: str) -> FileMetadataMatchResponse:
         file_metadata = await self.file_metadata_repo.find_by_size_and_checksum(file_size, partial_checksum)
+        file_metadata = file_metadata.model_dump(include=FileMetadataResponse.model_fields.keys(), by_alias=True)
+
         if file_metadata:
-            server_status = await self.server_status_repo.get_server_status(file_metadata.owner_id)
+            server_status = await self.server_status_repo.get_server_status(file_metadata["owner_id"])
             if server_status and server_status.is_online:
+                file_metadata["owner_id"] = str(file_metadata["owner_id"])
+                file_metadata["_id"] = str(file_metadata["_id"])
+                file_metadata = file_metadata
+                print(file_metadata)
+
                 return FileMetadataMatchResponse(
                     message="File metadata found",
-                    existing_file=file_metadata,
+                    existing_file=file_metadata,    
                     network_url=server_status.network_url,
                     port=server_status.port
                 )

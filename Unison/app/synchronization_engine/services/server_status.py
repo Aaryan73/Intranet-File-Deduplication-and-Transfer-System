@@ -1,5 +1,6 @@
-from app.repositories.server_status import ServerStatusRepository
-from app.models.server_status import ServerStatusCreate, ServerStatusInDB
+from app.synchronization_engine.repositories.server_status import ServerStatusRepository
+from app.synchronization_engine.models.server_status import ServerStatusCreate
+from app.synchronization_engine.schemas.server_status import ServerStatusResponse
 from typing import List
 
 class ServerStatusService:
@@ -10,5 +11,10 @@ class ServerStatusService:
         await self.server_status_repo.update_status(server_status)
         return {"message": "Server status updated"}
 
-    async def get_online_servers(self) -> List[ServerStatusInDB]:
-        return await self.server_status_repo.get_online_servers()
+    async def get_online_servers(self) -> List[ServerStatusResponse]:
+        online_servers = await self.server_status_repo.get_online_servers()
+        online_servers = [server.model_dump(by_alias=True) for server in online_servers]
+        online_servers = [
+            {**server, '_id': str(server['_id']), 'user_id': str(server['user_id'])} for server in online_servers
+        ]
+        return online_servers

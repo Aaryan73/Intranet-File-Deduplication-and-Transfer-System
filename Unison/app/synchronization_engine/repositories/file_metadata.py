@@ -1,15 +1,16 @@
-from .base import BaseRepository
-from app.models.file_metadata import FileMetadataCreate, FileMetadataInDB
+from app.core.mongodb import file_metadata_collection
+
+from app.synchronization_engine.models.file_metadata import FileMetadataCreate, FileMetadataInDB
 from bson import ObjectId
 from typing import Optional
 
-class FileMetadataRepository(BaseRepository):
+class FileMetadataRepository():
     def __init__(self):
         super().__init__()
-        self.collection = self.db.file_metadata
+        self.collection = file_metadata_collection
 
     async def create(self, file_metadata: FileMetadataCreate) -> str:
-        file_metadata_dict = file_metadata.dict()
+        file_metadata_dict = file_metadata.model_dump()
         result = await self.collection.insert_one(file_metadata_dict)
         return str(result.inserted_id)
 

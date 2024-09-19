@@ -38,8 +38,8 @@ class Settings(BaseSettings):
     # Token expiration settings
     ACCESS_TOKEN_EXPIRE_SECONDS: int = 60 * 30  # 30 minutes
     REFRESH_TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 24 * 30  # 30 days
-    JWT_ALGO: str = "HS512"
-    TOTP_ALGO: str = "SHA-1"
+    JWT_ALGO: str
+    TOTP_ALGO: str
     
     SERVER_NAME: str
     SERVER_HOST: AnyHttpUrl
@@ -125,12 +125,10 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_PASSWORD: str
     USERS_OPEN_REGISTRATION: bool = True
 
-    # Artifact upload settings
-    UPLOAD_DIR: str = "uploads"
-    CHUNK_SIZE: int = 10 * 1024 * 1024  # 10MB chunks
-    MAX_WORKERS: int = 5
-    CLEANUP_INTERVAL: int = 3600  # 1 hour
-    MAX_UPLOAD_AGE: int = 86400  # 1 day
+    # Partial checksum calculation settings 
+    CHUNK_SIZE: int = 1024 * 1024  # 1MB
+    DOWNLOAD_LIMIT: int = 8 * 1024 * 1024  # Exactly 8MB
+    MAX_DOWNLOAD_TIME:int = 60  # 1 minute, adjust as needed
     
     class Config:
         """

@@ -2,7 +2,12 @@ from app.synchronization_engine.repositories.file_metadata import FileMetadataRe
 from app.synchronization_engine.repositories.server_status import ServerStatusRepository
 from app.synchronization_engine.models.file_metadata import FileMetadataCreate
 from app.synchronization_engine.schemas.file_metadata import FileMetadataMatchResponse, FileMetadataCreateResponse, FileMetadataResponse
+from app.core.config import settings
 from fastapi import HTTPException, status
+import hashlib
+import aiohttp
+import asyncio
+
 
 class FileMetadataService:
     def __init__(self, file_metadata_repo: FileMetadataRepository, server_status_repo: ServerStatusRepository):
@@ -58,3 +63,60 @@ class FileMetadataService:
             status_code=status.HTTP_404_NOT_FOUND,
             detail="File metadata not found"
         )
+    
+    async def download_and_calculate_partial_checksum(self, url: str) -> dict:
+        """
+        Download exactly the first 8MB of a file and calculate its checksum.
+
+        Args:
+            url (str): The URL of the file to download.
+
+        Returns:
+            str: The calculated checksum of the first 8MB.
+
+        Raises:
+            HTTPException: If there's an error downloading the file or calculating the checksum.
+        """
+        checksum = hashlib.md5()
+        total_bytes = 0
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    if response.status != 200:
+                        raise HTTPException(status_code=400, detail="Failed to download the file")
+
+                    start_time = asyncio.get_event_loop().time()
+
+                    while total_bytes < settings.DOWNLOAD_LIMIT:
+                        remaining = settings.DOWNLOAD_LIMIT - total_bytes
+                        chunk = await asyncio.wait_for(
+                            response.content.read(min(settings.CHUNK_SIZE, remaining)),
+                            timeout=settings.MAX_DOWNLOAD_TIME
+                        )
+                        if not chunk:
+                            break
+                        checksum.update(chunk)
+                        total_bytes += len(chunk)
+
+                        if asyncio.get_event_loop().time() - start_time > settings.MAX_DOWNLOAD_TIME:
+                            raise HTTPException(
+                                status_code=408,
+                                detail="Download took too long. Please try again later."
+                            )
+
+        except asyncio.TimeoutError:
+            raise HTTPException(
+                status_code=408,
+                detail="Download timed out. Please try again later."
+            )
+        except aiohttp.ClientError as e:
+            raise HTTPException(status_code=400, detail=f"Error downloading file: {str(e)}")
+
+        if total_bytes < settings.DOWNLOAD_LIMIT:
+            raise HTTPException(status_code=400, detail="File is smaller than 8MB")
+
+        return {
+            "download_url": url,
+            "checksum": checksum.hexdigest()
+            }

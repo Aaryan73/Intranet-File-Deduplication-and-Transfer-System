@@ -38,7 +38,7 @@ class FileMetadataService:
         file_id = await self.file_metadata_repo.create(file_metadata)
         return FileMetadataCreateResponse(message="File metadata created", file_id=file_id)
 
-    async def get_file_metadata(self, file_size: int, partial_checksum: str) -> FileMetadataMatchResponse:
+    async def get_file_metadata(self, file_size: int, partial_checksum: str, receiver: dict) -> FileMetadataMatchResponse:
         file_metadata = await self.file_metadata_repo.find_by_size_and_checksum(file_size, partial_checksum)
         if file_metadata:
             file_metadata = file_metadata.model_dump(include=FileMetadataResponse.model_fields.keys(), by_alias=True)
@@ -47,7 +47,6 @@ class FileMetadataService:
                 file_metadata["owner_id"] = str(file_metadata["owner_id"])
                 file_metadata["_id"] = str(file_metadata["_id"])
                 file_metadata = file_metadata
-                print(file_metadata)
 
                 try:
                     self.file_checker_client = FileExistenceCheckerClient(f"{server_status.network_url}:{server_status.port}")
@@ -65,12 +64,17 @@ class FileMetadataService:
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         detail=f"Error checking file existence: {str(e)}"
                     )
-
+                
+                receiver_server_status = await self.server_status_repo.get_server_status(receiver.model_dump()["id"])
+                receiver_ip=""
+                if receiver_server_status:
+                    receiver_ip = receiver_server_status.model_dump()["network_url"].split("//")[1].split(":")[0]  # Geting just the network ip
                 return FileMetadataMatchResponse(
                     message="File metadata found",
                     existing_file=file_metadata,    
                     network_url=server_status.network_url,
-                    port=server_status.port
+                    port=server_status.port,
+                    your_ip=receiver_ip
                 )
             else:
                 raise HTTPException(

@@ -30,12 +30,13 @@ async def get_file_metadata(
     service: FileMetadataService = Depends(get_file_metadata_service),
     current_user: User = Depends(get_current_active_user)
 ):
-    return await service.get_file_metadata(file_size, partial_checksum)
+
+    return await service.get_file_metadata(file_size, partial_checksum, current_user)
 
 @router.get("/calculate-partial-checksum", response_model=dict)
 async def calculate_checksum(
     download_url: str = Query(..., description="URL of the file to download"),
     service: FileMetadataService = Depends(get_file_metadata_service),
-    current_usd: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     return await service.download_and_calculate_partial_checksum(download_url)

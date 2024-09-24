@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-
+from typing import Optional
 class FileMetadataResponse(BaseModel):
     id: str = Field(..., alias="_id")
     file_size: int
@@ -13,6 +13,7 @@ class FileMetadataMatchResponse(BaseModel):
     existing_file: FileMetadataResponse
     network_url: str
     port: int
+    your_ip: Optional[str]
 
 class FileMetadataCreateResponse(BaseModel):
     message: str

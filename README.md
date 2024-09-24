@@ -31,3 +31,37 @@
 ### Preview
 
 ![prototype](working-images/prototype.gif)
+
+
+Testing notes (25/09/2024)
+
+### DDAS testing notes:
+
+hawamahal network ip: http://172.18.27.190/ (Windows)
+
+my laptop network ip: http://10.1.92.183/ (Ubuntu)
+
+**Test 1: Transferring file from my laptop to hawamahal**
+
+filename: training.zip
+
+Description: A dataset of images downloaded from kaggle
+
+total data transferred: 3797.7 MB (3.8 GB)
+
+total time taken: 3 mins and 50 seconds = 230 seconds
+
+Intranet transfer speed = 3797.7 MB/ 230 s = 16.5 MBps = 132 Mbps
+
+
+**Test 2: Transferring files from hawamahal to my laptop**
+
+filename: flutter_windows_3.24.3-stable.zip
+
+Description: Flutter sdk
+
+total data transferred: 1032.4 MB (1.0 GB)
+
+total time taken: 51 seconds
+
+Intranet transfer speed = 1032.4 MB / 51 s =   20.2 MBps = 162 Mbps

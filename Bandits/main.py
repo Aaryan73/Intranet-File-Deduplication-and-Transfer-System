@@ -61,13 +61,16 @@ def get_upload_dir() -> str:
 
 # Constants
 UPLOAD_DIR = get_upload_dir()
-# CENTRAL_SERVER_URL = "http://52.172.0.204:8080/api"
-CENTRAL_SERVER_URL = "http://localhost:8000/api"
+CENTRAL_SERVER_URL = "http://52.172.0.204:8080/api"
+# CENTRAL_SERVER_URL = "http://localhost:8000/api"
 SERVER_STATUS_ENDPOINT = f"{CENTRAL_SERVER_URL}/server-status"
 
 # Uvicorn configs
 HOST = "0.0.0.0"
-PORT = 9000
+PORT = 8000
+
+# File transfer configs
+CHUNK_SIZE = 10 * 1024 * 1024   # 10MB
 
 # Global variables
 access_token = None
@@ -179,7 +182,7 @@ async def check_file_existence(request: FilePathRequest) -> Dict[str, bool]:
         raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
 
 @app.post("/receive_file")
-async def receive_file(request: Request, current_user: str = Depends(get_current_user)):
+async def receive_file(request: Request):
     content_range = request.headers.get('Content-Range')
     content_disposition = request.headers.get('Content-Disposition')
 
@@ -220,13 +223,13 @@ async def receive_file(request: Request, current_user: str = Depends(get_current
         )
 
 @app.get("/send_file")
-async def send_file(source_path: str, receiver_ip: str, current_user: str = Depends(get_current_user)):
+async def send_file(source_path: str, receiver_ip: str):
     if not os.path.exists(source_path):
         raise HTTPException(status_code=404, detail="Source file not found")
 
     try:
         async with httpx.AsyncClient() as client:
-            async def send_file_in_chunks(url, file_path, chunk_size=1024*1024):
+            async def send_file_in_chunks(url, file_path, chunk_size=CHUNK_SIZE):
                 file_name = os.path.basename(file_path)
                 file_size = os.path.getsize(file_path)
                 bytes_sent = 0

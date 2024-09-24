@@ -11,7 +11,7 @@ from bson import ObjectId
 router = APIRouter()
 
 
-@router.put("/", response_model=dict)
+@router.put("", response_model=dict)
 async def update_server_status(
     server_status: ServerStatus,
     service: ServerStatusService = Depends(get_server_status_service),

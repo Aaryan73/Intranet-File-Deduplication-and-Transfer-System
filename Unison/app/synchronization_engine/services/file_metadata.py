@@ -3,6 +3,7 @@ from app.synchronization_engine.repositories.server_status import ServerStatusRe
 from app.synchronization_engine.models.file_metadata import FileMetadataCreate
 from app.synchronization_engine.schemas.file_metadata import FileMetadataMatchResponse, FileMetadataCreateResponse, FileMetadataResponse
 from app.core.config import settings
+from app.utils.file_existence_check_utils import FileExistenceCheckerClient
 from fastapi import HTTPException, status
 import hashlib
 import aiohttp
@@ -13,6 +14,7 @@ class FileMetadataService:
     def __init__(self, file_metadata_repo: FileMetadataRepository, server_status_repo: ServerStatusRepository):
         self.file_metadata_repo = file_metadata_repo
         self.server_status_repo = server_status_repo
+        self.file_checker_client = None
 
     async def create_file_metadata(self, file_metadata: FileMetadataCreate) -> FileMetadataCreateResponse:
         existing_file = await self.file_metadata_repo.find_by_size_and_checksum(
@@ -38,15 +40,31 @@ class FileMetadataService:
 
     async def get_file_metadata(self, file_size: int, partial_checksum: str) -> FileMetadataMatchResponse:
         file_metadata = await self.file_metadata_repo.find_by_size_and_checksum(file_size, partial_checksum)
-        file_metadata = file_metadata.model_dump(include=FileMetadataResponse.model_fields.keys(), by_alias=True)
-
         if file_metadata:
+            file_metadata = file_metadata.model_dump(include=FileMetadataResponse.model_fields.keys(), by_alias=True)
             server_status = await self.server_status_repo.get_server_status(file_metadata["owner_id"])
             if server_status and server_status.is_online:
                 file_metadata["owner_id"] = str(file_metadata["owner_id"])
                 file_metadata["_id"] = str(file_metadata["_id"])
                 file_metadata = file_metadata
                 print(file_metadata)
+
+                try:
+                    self.file_checker_client = FileExistenceCheckerClient(f"{server_status.network_url}:{server_status.port}")
+                    async with self.file_checker_client as client:
+                        file_path = file_metadata.get("file_location", "")  # Ensure you have the correct field name
+                        existence_result = await client.check_file_existence(file_path)
+                        
+                        if not existence_result.get("exists", False):
+                            raise HTTPException(
+                                status_code=status.HTTP_404_NOT_FOUND,
+                                detail="File metadata exists but the actual file is not found on the server"
+                            )
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=f"Error checking file existence: {str(e)}"
+                    )
 
                 return FileMetadataMatchResponse(
                     message="File metadata found",

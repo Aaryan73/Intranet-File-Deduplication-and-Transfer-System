@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup events
@@ -61,9 +62,11 @@ def get_upload_dir() -> str:
 
 # Constants
 UPLOAD_DIR = get_upload_dir()
-CENTRAL_SERVER_URL = "http://52.172.0.204:8080/api"
-# CENTRAL_SERVER_URL = "http://localhost:8000/api"
+# CENTRAL_SERVER_URL = "http://52.172.0.204:8080/api"
+CENTRAL_SERVER_URL = "http://localhost:8080/api"
 SERVER_STATUS_ENDPOINT = f"{CENTRAL_SERVER_URL}/server-status"
+TRANSACTION_CREATE_ENDPOINT=f"{CENTRAL_SERVER_URL}/dashboard/transactions/"
+TRANSACTION_UPDATE_ENDPOINT=f"{CENTRAL_SERVER_URL}/dashboard/transactions/"
 
 # Uvicorn configs
 HOST = "0.0.0.0"
@@ -85,6 +88,19 @@ class ServerStatus(BaseModel):
 
 class FilePathRequest(BaseModel):
     file_path: str
+
+class TransactionCreate(BaseModel):
+    sender_id: str
+    start_time: str
+    file_size: int
+    completed: bool = False
+
+class TransactionUpdate(BaseModel):
+    end_time: str
+    receiver_id: str
+
+class TransactionResponse(BaseModel):
+    id: str
 
 # Utility functions
 def get_local_ip():
@@ -119,6 +135,45 @@ async def file_exists(file_path: str) -> bool:
         return False
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
+    
+async def create_transaction(file_size: int) -> str:
+    async with httpx.AsyncClient() as client:
+        transaction = TransactionCreate(
+            sender_id=get_local_ip(),
+            start_time=datetime.now(timezone.utc).isoformat(),
+            file_size=file_size
+        )
+        response = await client.post(
+            TRANSACTION_CREATE_ENDPOINT,
+            json=transaction.model_dump(),
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        )
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+
+async def update_transaction(transaction_id: str, receiver_id: str):
+    async with httpx.AsyncClient() as client:
+        transaction_update = TransactionUpdate(
+            end_time=datetime.now(timezone.utc).isoformat(),
+            receiver_id=receiver_id
+        )
+        response = await client.put(
+            f"{TRANSACTION_UPDATE_ENDPOINT}{transaction_id}",
+            json=transaction_update.model_dump(),
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        )
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
 
 # Authentication
 async def authenticate(username: str, password: str) -> str:
@@ -185,6 +240,7 @@ async def check_file_existence(request: FilePathRequest) -> Dict[str, bool]:
 async def receive_file(request: Request):
     content_range = request.headers.get('Content-Range')
     content_disposition = request.headers.get('Content-Disposition')
+    transaction_id = request.headers.get('X-Transaction-ID')
 
     if not content_range or not content_disposition:
         raise HTTPException(status_code=400, detail="Missing required headers")
@@ -208,6 +264,9 @@ async def receive_file(request: Request):
     file_size = os.path.getsize(file_path)
 
     if end + 1 >= total:
+        # File transfer complete, update transaction
+        if transaction_id:
+            await update_transaction(transaction_id, get_local_ip())
         return JSONResponse(
             content={
                 "message": "File upload complete",
@@ -228,8 +287,13 @@ async def send_file(source_path: str, receiver_ip: str):
         raise HTTPException(status_code=404, detail="Source file not found")
 
     try:
+        file_size = os.path.getsize(source_path)
+
+        transaction_response = await create_transaction(file_size)
+        transaction_id = transaction_response
+
         async with httpx.AsyncClient() as client:
-            async def send_file_in_chunks(url, file_path, chunk_size=CHUNK_SIZE):
+            async def send_file_in_chunks(url, file_path, transaction_id, chunk_size=CHUNK_SIZE):
                 file_name = os.path.basename(file_path)
                 file_size = os.path.getsize(file_path)
                 bytes_sent = 0
@@ -242,29 +306,43 @@ async def send_file(source_path: str, receiver_ip: str):
 
                         headers = {
                             'Content-Range': f'bytes {bytes_sent}-{bytes_sent+len(chunk)-1}/{file_size}',
-                            'Content-Disposition': f'attachment; filename="{file_name}"'
+                            'Content-Disposition': f'attachment; filename="{file_name}"',
+                            'X-Transaction-ID': transaction_id
                         }
-                        response = await client.post(url, headers=headers, content=chunk)
-                        response.raise_for_status()
+                        try:
+                            response = await client.post(url, headers=headers, content=chunk, timeout=30.0)
+                            response.raise_for_status()
+                        except httpx.TimeoutException:
+                            raise
+                        except httpx.RequestError as exc:
+                            raise
+                        except httpx.HTTPStatusError as exc:
+                            raise
 
                         bytes_sent += len(chunk)
 
                 return response
 
-            response = await send_file_in_chunks(f'http://{receiver_ip}:8000/receive_file', source_path)
+            response = await send_file_in_chunks(f'http://{receiver_ip}:8000/receive_file', source_path, transaction_id)
 
         return JSONResponse(
             content={
                 "message": "File sent and uploaded successfully",
-                "server_response": response.json()
+                "server_response": response.json(),
+                "transaction_id": transaction_id
             },
             status_code=200
         )
 
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Request timed out")
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred while making the request: {str(e)}")
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+    
 
 # Background task
 async def update_server_status(startup: bool):

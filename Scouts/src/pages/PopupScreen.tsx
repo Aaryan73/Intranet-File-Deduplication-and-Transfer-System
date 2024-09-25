@@ -18,6 +18,7 @@ import {
 import ToggleSwitch from '../components/ToggleSwitch';
 import { useTab } from '../hooks/TabContext';
 
+// Function to get the appropriate file icon based on file extension
 const getFileIcon = (filename: string) => {
   const ext = filename.split('.').pop()?.toLowerCase() || '';
   const iconMap: { [key: string]: JSX.Element } = {
@@ -46,6 +47,7 @@ interface DownloadItem {
   totalBytes: number;
 }
 
+// Function to format bytes into readable format (e.g., KB, MB)
 const formatBytes = (bytes: number, decimals = 2): string => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -61,10 +63,11 @@ const Popup = () => {
   const [ongoingDownloads, setOngoingDownloads] = useState<DownloadItem[]>([]);
   const [pausedIds, setPausedIds] = useState<number[]>([]);
 
+  // Function to pause all ongoing downloads during API calls
   const pauseAllDownloads = () => {
     const pausedIds = ongoingDownloads.map((download) => {
       if (!download.paused) {
-        chrome.downloads.pause(download.id);
+        chrome.downloads.pause(download.id); // Pause download if not already paused
         return download.id;
       }
       return null;
@@ -72,15 +75,17 @@ const Popup = () => {
     setPausedIds(pausedIds as number[]);
   };
 
+  // Function to resume previously paused downloads after API calls
   const resumePausedDownloads = () => {
     pausedIds.forEach((id) => {
-      chrome.downloads.resume(id);
+      chrome.downloads.resume(id); // Resume paused downloads
     });
     setPausedIds([]);
   };
 
+  // Function to fetch the checksum of a file and pause downloads during the API call
   const fetchChecksum = async (url: string) => {
-    pauseAllDownloads();
+    pauseAllDownloads(); // Pause all downloads before API call
     try {
       const response = await axios.get(`/api/checksum?url=${encodeURIComponent(url)}`);
       return response.data.checksum;
@@ -88,12 +93,13 @@ const Popup = () => {
       console.error('Error fetching checksum:', error);
       return null;
     } finally {
-      resumePausedDownloads();
+      resumePausedDownloads(); // Resume downloads after the API call completes
     }
   };
 
+   // Function to fetch metadata of a file and pause downloads during the API call
   const fetchMetadata = async (url: string) => {
-    pauseAllDownloads();
+    pauseAllDownloads(); // Pause all downloads before API call
     try {
       const response = await axios.get(`/api/metadata?url=${encodeURIComponent(url)}`);
       return response.data.metadata;
@@ -101,12 +107,13 @@ const Popup = () => {
       console.error('Error fetching metadata:', error);
       return null;
     } finally {
-      resumePausedDownloads();
+      resumePausedDownloads(); // Resume downloads after the API call completes
     }
   };
 
+  // Function to post metadata to the server and pause downloads during the API call
   const postMetadata = async (metadata: any) => {
-    pauseAllDownloads();
+    pauseAllDownloads(); // Pause all downloads before API call
     try {
       const response = await axios.post('/api/metadata', metadata);
       return response.data;
@@ -114,32 +121,37 @@ const Popup = () => {
       console.error('Error posting metadata:', error);
       return null;
     } finally {
-      resumePausedDownloads();
+      resumePausedDownloads(); // Resume downloads after the API call completes
     }
   };
 
+  // Function to pause an individual download
   const handlePause = (id: number) => {
     chrome.downloads.pause(id);
   };
 
+  // Function to resume an individual download
   const handleResume = (id: number) => {
     chrome.downloads.resume(id);
   };
 
+  // Function to cancel an individual download
   const handleCancel = (id: number) => {
     chrome.downloads.cancel(id);
   };
 
+  // Function to handle new downloads, fetching checksum and metadata, and posting the combined data
   const handleNewDownload = async (downloadItem: DownloadItem) => {
     const checksum = await fetchChecksum(downloadItem.finalUrl);
     const metadata = await fetchMetadata(downloadItem.finalUrl);
 
     if (checksum && metadata) {
       const combinedData = { checksum, metadata, downloadItem };
-      await postMetadata(combinedData);
+      await postMetadata(combinedData); // Post combined data after fetching checksum and metadata
     }
   };
 
+  // Fetch ongoing downloads periodically to update the state
   const fetchOngoingDownloads = () => {
     chrome.downloads.search({}, (results) => {
       const ongoing = results.filter((item) => item.state === 'in_progress');
@@ -147,6 +159,7 @@ const Popup = () => {
     });
   };
 
+   // useEffect hook to initialize the downloads list and set up periodic fetching of ongoing downloads
   useEffect(() => {
     chrome.runtime.sendMessage({ command: 'getDownloads' }, (response) => {
       if (response && Array.isArray(response.downloads)) {
@@ -159,10 +172,11 @@ const Popup = () => {
       }
     });
 
-    const interval = setInterval(fetchOngoingDownloads, 1000);
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchOngoingDownloads, 1000); // Fetch ongoing downloads every second
+    return () => clearInterval(interval); // Cleanup interval on component unmount
   }, []);
 
+  // Helper function to extract file name from a URL or path
   const getFileName = (path: string): string => {
     return path.substring(path.lastIndexOf('/') + 1);
   };

@@ -62,8 +62,8 @@ def get_upload_dir() -> str:
 
 # Constants
 UPLOAD_DIR = get_upload_dir()
-# CENTRAL_SERVER_URL = "http://52.172.0.204:8080/api"
-CENTRAL_SERVER_URL = "http://localhost:8080/api"
+CENTRAL_SERVER_URL = "http://52.172.0.204:8080/api"
+# CENTRAL_SERVER_URL = "http://localhost:8080/api"
 SERVER_STATUS_ENDPOINT = f"{CENTRAL_SERVER_URL}/server-status"
 TRANSACTION_CREATE_ENDPOINT=f"{CENTRAL_SERVER_URL}/dashboard/transactions/"
 TRANSACTION_UPDATE_ENDPOINT=f"{CENTRAL_SERVER_URL}/dashboard/transactions/"

@@ -86,8 +86,14 @@ const Popup = () => {
   // Function to fetch the checksum of a file and pause downloads during the API call
   const fetchChecksum = async (url: string) => {
     pauseAllDownloads(); // Pause all downloads before API call
+    const token = localStorage.getItem('accessToken');
     try {
-      const response = await axios.get(`/api/checksum?url=${encodeURIComponent(url)}`);
+      console.log(token);
+      const response = await axios.get(`http://52.172.0.204:8080/api/file-metadata/calculate-partial-checksum?url=${encodeURIComponent(url)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
       return response.data.checksum;
     } catch (error) {
       console.error('Error fetching checksum:', error);
@@ -97,11 +103,17 @@ const Popup = () => {
     }
   };
 
-   // Function to fetch metadata of a file and pause downloads during the API call
+  // Function to fetch metadata of a file and pause downloads during the API call
   const fetchMetadata = async (url: string) => {
     pauseAllDownloads(); // Pause all downloads before API call
+    const token = localStorage.getItem('accessToken');
     try {
-      const response = await axios.get(`/api/metadata?url=${encodeURIComponent(url)}`);
+      const response = await axios.get(`http://52.172.0.204:8080/api/file-metadata?download_url=${encodeURIComponent(url)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+      console.log('Here');
       return response.data.metadata;
     } catch (error) {
       console.error('Error fetching metadata:', error);
@@ -114,8 +126,13 @@ const Popup = () => {
   // Function to post metadata to the server and pause downloads during the API call
   const postMetadata = async (metadata: any) => {
     pauseAllDownloads(); // Pause all downloads before API call
+    const token = localStorage.getItem('accessToken');
     try {
-      const response = await axios.post('/api/metadata', metadata);
+      const response = await axios.post('http://52.172.0.204:8080/api/file-metadata', metadata, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
       return response.data;
     } catch (error) {
       console.error('Error posting metadata:', error);
@@ -155,11 +172,12 @@ const Popup = () => {
   const fetchOngoingDownloads = () => {
     chrome.downloads.search({}, (results) => {
       const ongoing = results.filter((item) => item.state === 'in_progress');
+      pauseAllDownloads();
       setOngoingDownloads(ongoing as DownloadItem[]);
     });
   };
 
-   // useEffect hook to initialize the downloads list and set up periodic fetching of ongoing downloads
+  // useEffect hook to initialize the downloads list and set up periodic fetching of ongoing downloads
   useEffect(() => {
     chrome.runtime.sendMessage({ command: 'getDownloads' }, (response) => {
       if (response && Array.isArray(response.downloads)) {
@@ -167,6 +185,7 @@ const Popup = () => {
         response.downloads.forEach((downloadItem: DownloadItem) => {
           if (downloadItem.state === 'in_progress') {
             handleNewDownload(downloadItem);
+            console.log('here');
           }
         });
       }
@@ -245,9 +264,8 @@ const Popup = () => {
         {downloads.slice(0, 10).map((download) => (
           <div
             key={download.id}
-            className={`block hover:border-blue-500 mx-2 px-4 py-4 border border-gray-200 rounded-lg shadow ${
-              download.state === 'interrupted' ? 'bg-red-100 border-red-400' : 'bg-white'
-            }`}
+            className={`block hover:border-blue-500 mx-2 px-4 py-4 border border-gray-200 rounded-lg shadow ${download.state === 'interrupted' ? 'bg-red-100 border-red-400' : 'bg-white'
+              }`}
           >
             <div className="flex items-center mb-2">
               <span className="text-xl mr-2">{getFileIcon(download.filename)}</span>
